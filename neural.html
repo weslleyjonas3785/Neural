@@ -775,7 +775,7 @@ function slotWrite(id,s){if(NS){if(!NS.write(id,s))throw new Error('write')}else
 function slotDel(id){if(NS)NS.remove(id);else localStorage.removeItem(id=='legacy'?SKS:'neural_slot_'+id)}
 function hasSave(){return slotList().length>0}
 function showSlots_old(){const a=slotList();if(selSlot&&!a.some(s=>s.id==selSlot))selSlot=null;scrn('<h1>'+L3('Jogos salvos','Saved games','Partidas guardadas')+'</h1>'+(a.length?a.map(s=>{const m=s.meta||{};const d=m.ts?new Date(m.ts).toLocaleString():'';const on=selSlot==s.id;return `<div class=row onclick="selSlot='${s.id}';showSlots()" style="cursor:pointer;justify-content:space-between;gap:8px;padding:6px;border:2px solid ${on?'#e0a030':'#0000'}"><span><b>${String(m.name||s.id).replace(/[<>&]/g,'')}</b> &nbsp; ${m.day?L3('Dia','Day','Día')+' '+m.day:''} &nbsp; <small>${d}</small></span>${on?`<span><button onclick="event.stopPropagation();loadSlot('${s.id}')">${L3('Entrar','Enter','Entrar')}</button> <button onclick="event.stopPropagation();delSlot('${s.id}')">${L3('Excluir mundo','Delete world','Eliminar mundo')}</button></span>`:''}</div>`}).join(''):'<div class=row>'+L3('Nenhum save.','No saves.','Sin partidas.')+'</div>')+`<button class=mb onclick="showPlay()">${L3('Voltar','Back','Volver')}</button>`)}
-var sal=0,lep=0,ptsF=0,disT=60,coldT=0,BUILD='353',delArm=null;function delSlot(id){if(delArm!==id){delArm=id;showSlots();return}delArm=null;try{slotDel(id)}catch(e){}selSlot=null;showSlots()}
+var sal=0,lep=0,ptsF=0,disT=60,coldT=0,BUILD='354',delArm=null;function delSlot(id){if(delArm!==id){delArm=id;showSlots();return}delArm=null;try{slotDel(id)}catch(e){}selSlot=null;showSlots()}
 function loadSlot(id){let o;try{o=JSON.parse(slotRead(id))}catch(e){alert('Save inválido');return}
 const go=()=>{try{MP=null;curSlot=id;PC={};init(o.seed||7);loadGame(o);begin();mpHostOnline()}catch(e){alert('Save inválido')}};
 if(o.bv===BUILD){go();return}
@@ -1751,7 +1751,9 @@ function mv(e,dx,dy,r){const n=Math.min(16,Math.max(1,Math.ceil(Math.max(Math.ab
 const near=t=>str.some(s=>s.t==t&&D(s,P)<170);
 const chMine=s=>CHC[s.t]&&s.items&&(!s.ow||s.ow==myId()||clanAt(s));
 function ctk(k,n){let r=n;const a=Math.min(r,inv[k]||0);if(a){inv[k]-=a;r-=a;if(inv[k]<=0)delete inv[k]}for(const s of chNear()){if(r<=0)break;const b=Math.min(r,s.items[k]||0);if(b){s.items[k]-=b;r-=b;if(s.items[k]<=0)delete s.items[k]}}return n-r}
-function chNear(){return str.filter(s=>chMine(s)&&D(s,P)<900)}
+function terMine(x,y){const me=myPid();return ter.find(q=>(q.age>4||q.age==null)&&Math.hypot(q.x-x,q.y-y)<q.r&&(q.ow==me||(q.m||[]).includes(me)))||null}
+function chNear(){const T=terMine(P.x,P.y);if(!T)return[];return str.filter(s=>chMine(s)&&Math.hypot(s.x-T.x,s.y-T.y)<T.r)}
+function cKeys(){const o=new Set(Object.keys(inv).filter(k=>inv[k]>0));for(const s of chNear())for(const k in s.items)if(s.items[k]>0)o.add(k);return[...o]}
 function avail(k,b){let n=inv[k]||0;if(b)for(const s of chNear())n+=s.items[k]||0;return n}
 const has=(c,b)=>Object.keys(c).every(k=>avail(k,b)>=c[k]);
 function spend(c,b){const cn=b?chNear():[];for(const k in c){let r=c[k];const a=Math.min(r,inv[k]||0);if(a){inv[k]-=a;r-=a;if(inv[k]<=0)delete inv[k]}for(const s of cn){if(r<=0)break;const b=Math.min(r,s.items[k]||0);if(b){s.items[k]-=b;r-=b;if(s.items[k]<=0)delete s.items[k]}}}}
@@ -2271,23 +2273,23 @@ function wgtMul(p){return p<=10?1:Math.max(.2,1-(p-10)/90*.78)}
 /* ===== Composteira (menu) + invasões de javali/galinha nos canteiros ===== */
 var TSW=0,cmpRef=null,cmpSig='',RAIDT=0;
 const CMP={a:['ash',30,5,'Cinzas','5 por adubo'],g:['stick',30,6,'Galhos','6 por adubo'],i:['fiber',30,10,'Fibra','10 por adubo']},CMPFOOD=['peel','berry','meat','can','herb','cooked','tea','stew','chicken','egg','roastch'];
-const cmpFoods=()=>Object.keys(inv).filter(k=>inv[k]>0&&(CMPFOOD.includes(k)||/^f_/.test(k)));
+const cmpFoods=()=>cKeys().filter(k=>CMPFOOD.includes(k)||/^f_/.test(k));
 function cmpInit(s){const c=s.cp&&typeof s.cp=='object'?s.cp:(s.cp={});if(c.n){c.f=(c.f|0)+c.n;c.n=0}for(const k of['f','a','g','i','t','out'])c[k]=+c[k]||0;return c}
 const cmpOk=c=>c.out<20&&c.f>=1&&c.a>=5&&c.g>=6&&c.i>=10;
 function cmpTick(s,dt){const c=cmpInit(s);if(!cmpOk(c))return;c.t+=dt;if(c.t>=300){c.t=0;c.f--;c.a-=5;c.g-=6;c.i-=10;c.out++;if(MP)MP.t2=1}}
 function cmpDo(s,a,sk,n){const c=cmpInit(s);n=Math.max(0,n|0);const cap=sk=='f'?30:sk=='out'?20:CMP[sk]&&CMP[sk][1];if(!cap)return null;const key=sk=='f'?null:sk=='out'?'compost':CMP[sk][0];
 if(a=='p'){if(sk=='out')return null;const q=Math.max(0,Math.min(n,cap-c[sk]));c[sk]+=q;return n-q>0&&key?{k:key,n:n-q}:null}
 if(sk=='f')return null;const q=Math.min(n,c[sk]);if(q<=0)return null;c[sk]-=q;return{k:key,n:q}}
-function cmpa(a,sk,n,fk){const s=cmpRef;if(!s)return;const c=cmpInit(s);if(a=='p'){const cap=sk=='f'?30:CMP[sk][1],key=sk=='f'?fk:CMP[sk][0];if(!key)return;const q=Math.min(n,inv[key]||0,cap-c[sk]);if(q<=0)return msg(inv[key]>0?'Cheio.':'Você não tem '+(IT[key]||key)+'.');inv[key]-=q;if(!inv[key])delete inv[key];n=q}
+function cmpa(a,sk,n,fk){const s=cmpRef;if(!s)return;const c=cmpInit(s);if(a=='p'){const cap=sk=='f'?30:CMP[sk][1],key=sk=='f'?fk:CMP[sk][0];if(!key)return;const q=Math.min(n,avail(key,1),cap-c[sk]);if(q<=0)return msg(avail(key,1)>0?'Cheio.':'Você não tem '+(IT[key]||key)+'.');ctk(key,q);n=q}
 else if(!(MP&&MP.client)&&!(c[sk]>0))return msg('Vazio.');
 if(MP&&MP.client){mpSend({t:'cmpop',to:0,x:s.x,y:s.y,a,sk,n});return}
 const g=cmpDo(s,a,sk,n);if(g)giveOrDrop(g.k,g.n);if(MP)MP.t2=1;cmpSig='';ui()}
 function mpCmpOp(m){const s=str.find(q=>q.t=='composter'&&q.x==m.x&&q.y==m.y);if(!s)return;const g=cmpDo(s,m.a=='p'?'p':'t',String(m.sk),m.n);if(g)fireGive(m.from,g.k,g.n);MP.t2=1;mpSend({t:'cmpst',to:m.from,x:s.x,y:s.y,cp:s.cp})}
 function cmpUI(){const c=cmpInit(cmpRef),bt=(a,sk,n,l,fk)=>`<button style="padding:4px 9px;font-size:12px;margin:0 2px" onclick="cmpa('${a}','${sk}',${n}${fk?",'"+fk+"'":''})">${l}</button>`,
 row=sk=>{const d=CMP[sk];return `<div class=g style="align-items:center;margin:2px 0;flex-wrap:nowrap"><div class="i s${c[sk]?'':' e'}">${imh(d[0])}<span>${c[sk]}/${d[1]}</span></div><div style="width:150px;font-size:12px"><b>${d[3]}</b><br><span style="opacity:.65;font-size:11px">${d[4]}</span></div><div style="white-space:nowrap">${bt('p',sk,1,'+1')+bt('p',sk,5,'+5')+bt('p',sk,99,'Máx')} &nbsp;${bt('t',sk,1,'−1')+bt('t',sk,99,'Tudo')}</div></div>`},
-fs=cmpFoods(),fr=`<div class=g style="align-items:center;margin:2px 0;flex-wrap:nowrap"><div class="i s${c.f?'':' e'}">${imh('berry')}<span>${c.f}/30</span></div><div style="width:150px;font-size:12px"><b>Comida</b><br><span style="opacity:.65;font-size:11px">qualquer, 1 por adubo</span></div><div style="max-width:300px">${fs.length?fs.map(k=>bt('p','f',1,'+ '+(IT[k]||k)+' ('+inv[k]+')',k)).join(''):'<span style="opacity:.6;font-size:11px">Sem comida no inventário.</span>'}</div></div>`;
+fs=cmpFoods(),fr=`<div class=g style="align-items:center;margin:2px 0;flex-wrap:nowrap"><div class="i s${c.f?'':' e'}">${imh('berry')}<span>${c.f}/30</span></div><div style="width:150px;font-size:12px"><b>Comida</b><br><span style="opacity:.65;font-size:11px">qualquer, 1 por adubo</span></div><div style="max-width:300px">${fs.length?fs.map(k=>bt('p','f',1,'+ '+(IT[k]||k)+' ('+avail(k,1)+')',k)).join(''):'<span style="opacity:.6;font-size:11px">Sem comida no inventário.</span>'}</div></div>`;
 const pc=Math.min(100,c.t/3);return `<p><b>Composteira</b> <span style="font-size:11px;opacity:.7">— 1 adubo a cada 5 min (1 comida + 5 cinzas + 6 galhos + 10 fibras)</span></p>`+fr+['a','g','i'].map(row).join('')+`<div style="margin:8px 0"><div style="width:300px;height:12px;background:#000a;border:1px solid #555"><div id=cmpbar style="height:100%;width:${pc}%;background:${cmpOk(c)?'#7c4':'#777'}"></div></div><small id=cmpst>${cmpOk(c)?'Fazendo adubo... '+Math.round(pc)+'%':'Parada: faltam ingredientes'}</small></div><div class=g style="align-items:center"><div class="i s${c.out?'':' e'}">${imh('compost')}<span>${c.out}/20</span></div><div style="width:150px;font-size:12px"><b>Adubo pronto</b></div>${bt('t','out',1,'Pegar 1')+bt('t','out',99,'Pegar tudo')}</div>`}
-function cmpLive(){const c=cmpInit(cmpRef),sg=[c.f,c.a,c.g,c.i,c.out,Object.keys(inv).length].join('|');if(sg!=cmpSig){cmpSig=sg;ui();return}const b=document.getElementById('cmpbar');if(b){b.style.width=Math.min(100,c.t/3)+'%'}const t=document.getElementById('cmpst');if(t)t.textContent=cmpOk(c)?'Fazendo adubo... '+Math.round(Math.min(100,c.t/3))+'%':'Parada: faltam ingredientes'}
+function cmpLive(){const c=cmpInit(cmpRef),sg=[c.f,c.a,c.g,c.i,c.out,Object.keys(inv).length,cKeys().length].join('|');if(sg!=cmpSig){cmpSig=sg;ui();return}const b=document.getElementById('cmpbar');if(b){b.style.width=Math.min(100,c.t/3)+'%'}const t=document.getElementById('cmpst');if(t)t.textContent=cmpOk(c)?'Fazendo adubo... '+Math.round(Math.min(100,c.t/3))+'%':'Parada: faltam ingredientes'}
 const FENCT=new Set(['fence','wall','dwall','lwall','kwall','winw','arch']);
 const raidVuln=s=>s&&s.t=='planter'&&(s.ps|0)>=2&&str.filter(q=>FENCT.has(q.t)&&Math.hypot(q.x-s.x,q.y-s.y)<180).length<6;
 function raidTick(dt){RAIDT-=dt;if(RAIDT>0||HIN||UG)return;RAIDT=2;for(const s of str){if(s.t!='planter'||!raidVuln(s)||Math.hypot(s.x-P.x,s.y-P.y)>900)continue;
@@ -2342,9 +2344,9 @@ function fzTick(dt){for(const s of str){if(s.t!='fz')continue;const f=ensureFz(s
 f.burn-=dt;if(f.burn<=0){if(f.fuel&&f.fuel.n>0){f.burn=f.bmax=FZF[f.fuel.k];f.fuel.n--;if(!f.fuel.n)f.fuel=null}else{f.lit=0;f.burn=0;f.p=0;if(D(s,P)<400)msg('O forno apagou: sem combustível.');continue}}
 const o=f.ore;if(o&&o.n>0){const ik=FZO[o.k];if(f.qk!=o.k){f.q=0;f.qk=o.k}const need=(f.q|0)>=1,blk=need&&f.out&&(f.out.k!=ik||f.out.n>=FZC);if(blk){f.p=0;continue}
 f.p+=dt;if(f.p>=FZH){f.p=0;o.n--;f.q=(f.q|0)+1;if(f.q>=2){f.q=0;if(f.out)f.out.n++;else f.out={k:ik,n:1}}if(o.n<=0){f.ore=null;f.lit=0;f.p=0;if(D(s,P)<400)msg('O forno apagou: acabou o minério.')}}}else f.p=0}}
-function fzPut(sl,k){const f=ensureFz(fzRef);if(!(inv[k]>0))return;const ok=sl=='fuel'?FZF[k]:FZO[k];if(!ok){msg(sl=='fuel'?'Isso não serve de combustível (madeira, graveto ou carvão).':'O forno só funde minérios (ferro, cobre, bronze, prata, ouro).');return}
-const cur=f[sl];if(cur&&cur.k!=k){msg('O slot já tem outro item. Retire-o primeiro.');return}const n=Math.min(inv[k],FZC-(cur?cur.n:0));if(n<=0){msg('Slot cheio.');return}
-inv[k]-=n;if(!inv[k])delete inv[k];f[sl]=cur?{k,n:cur.n+n}:{k,n};ui()}
+function fzPut(sl,k){const f=ensureFz(fzRef);if(!(avail(k,1)>0))return;const ok=sl=='fuel'?FZF[k]:FZO[k];if(!ok){msg(sl=='fuel'?'Isso não serve de combustível (madeira, graveto ou carvão).':'O forno só funde minérios (ferro, cobre, bronze, prata, ouro).');return}
+const cur=f[sl];if(cur&&cur.k!=k){msg('O slot já tem outro item. Retire-o primeiro.');return}const n=Math.min(avail(k,1),FZC-(cur?cur.n:0));if(n<=0){msg('Slot cheio.');return}
+ctk(k,n);f[sl]=cur?{k,n:cur.n+n}:{k,n};ui()}
 function fzTake(sl){const f=ensureFz(fzRef),c=f[sl];if(!c)return;let n=c.n;while(n>0&&!canAdd(c.k,n))n--;if(n<=0){msg('Inventário cheio!');return}add(c.k,n);c.n-=n;if(c.n<=0)f[sl]=null;ui()}
 function fzLight(){const f=ensureFz(fzRef);if(f.lit){f.lit=0;f.p=0;msg('Forno apagado.');ui();return}
 if(f.burn<=0){if(!f.fuel||f.fuel.n<1){msg('Sem combustível: coloque madeira, graveto ou carvão.');return}f.burn=f.bmax=FZF[f.fuel.k];f.fuel.n--;if(!f.fuel.n)f.fuel=null}
@@ -2362,7 +2364,7 @@ function fzUI(){const f=ensureFz(fzRef),sl=slots();
 return `<p><b>Forno de Fundição</b> — <span id=fzt>${fzTxt(f)}</span></p>
 <div class=g style="align-items:center;gap:16px">${fzS('fuel','COMBUSTÍVEL')}<span style="font-size:20px">+</span>${fzS('ore','MINÉRIO')}<span style="font-size:20px">➜</span><div style="min-width:130px"><div class=bar><i id=fzb style="width:${f.p/FZH*100}%;background:#e0a030"></i></div><div style="font-size:11px">${FZH}s por minério · 2 minérios = 1 lingote</div></div><span style="font-size:20px">➜</span>${fzS('out','LINGOTE')}</div>
 <p><button onclick="fzLight()">${f.lit?'Apagar forno':'Acender forno'}</button> <button onclick="fzTake('out')">Pegar lingotes</button></p>
-<p><b>Do seu inventário</b> — arraste (ou clique) madeira/graveto/carvão para Combustível e minérios para Minério</p><div class=g>${sl.filter(([k])=>FZF[k]||FZO[k]).map(([k,n])=>dgI(k,n,`fzQuick('${k}')`)).join('')||'<small>Você não tem madeira, graveto, carvão nem minérios.</small>'}</div>`}
+<p><b>Do seu inventário e baús</b> — arraste (ou clique) madeira/graveto/carvão para Combustível e minérios para Minério</p><div class=g>${cKeys().filter(k=>FZF[k]||FZO[k]).map(k=>dgI(k,avail(k,1),`fzQuick('${k}')`)).join('')||'<small>Você não tem madeira, graveto, carvão nem minérios.</small>'}</div>`}
 let fzSig='';function fzLive(){const f=ensureFz(fzRef),sg=[f.lit,f.fuel&&f.fuel.k,f.fuel&&f.fuel.n,f.ore&&f.ore.k,f.ore&&f.ore.n,f.out&&f.out.k,f.out&&f.out.n,Object.values(inv).join()].join('|');if(sg!=fzSig){fzSig=sg;ui();return}
 const b=$('fzb'),t=$('fzt');if(b)b.style.width=(f.p/FZH*100)+'%';if(t)t.textContent=TR(fzTxt(f))}
 function drFz(s,a,b){const f=s.f&&s.f.fz===1?s.f:null,on=f&&f.lit,rot=(s.r|0)&3;dr(FZI[on?'on':'off'][rot],s.x,s.y+14,34,1,1);
