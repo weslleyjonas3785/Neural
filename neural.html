@@ -776,7 +776,7 @@ function slotWrite(id,s){if(NS){if(!NS.write(id,s))throw new Error('write')}else
 function slotDel(id){if(NS)NS.remove(id);else localStorage.removeItem(id=='legacy'?SKS:'neural_slot_'+id)}
 function hasSave(){return slotList().length>0}
 function showSlots_old(){const a=slotList();if(selSlot&&!a.some(s=>s.id==selSlot))selSlot=null;scrn('<h1>'+L3('Jogos salvos','Saved games','Partidas guardadas')+'</h1>'+(a.length?a.map(s=>{const m=s.meta||{};const d=m.ts?new Date(m.ts).toLocaleString():'';const on=selSlot==s.id;return `<div class=row onclick="selSlot='${s.id}';showSlots()" style="cursor:pointer;justify-content:space-between;gap:8px;padding:6px;border:2px solid ${on?'#e0a030':'#0000'}"><span><b>${String(m.name||s.id).replace(/[<>&]/g,'')}</b> &nbsp; ${m.day?L3('Dia','Day','Día')+' '+m.day:''} &nbsp; <small>${d}</small></span>${on?`<span><button onclick="event.stopPropagation();loadSlot('${s.id}')">${L3('Entrar','Enter','Entrar')}</button> <button onclick="event.stopPropagation();delSlot('${s.id}')">${L3('Excluir mundo','Delete world','Eliminar mundo')}</button></span>`:''}</div>`}).join(''):'<div class=row>'+L3('Nenhum save.','No saves.','Sin partidas.')+'</div>')+`<button class=mb onclick="showPlay()">${L3('Voltar','Back','Volver')}</button>`)}
-var sal=0,lep=0,ptsF=0,disT=60,coldT=0,BUILD='370',delArm=null;function delSlot(id){if(delArm!==id){delArm=id;showSlots();return}delArm=null;try{slotDel(id)}catch(e){}selSlot=null;showSlots()}
+var sal=0,lep=0,ptsF=0,disT=60,coldT=0,BUILD='371',delArm=null;function delSlot(id){if(delArm!==id){delArm=id;showSlots();return}delArm=null;try{slotDel(id)}catch(e){}selSlot=null;showSlots()}
 function loadSlot(id){let o;try{o=JSON.parse(slotRead(id))}catch(e){alert('Save inválido');return}
 const go=()=>{try{MP=null;curSlot=id;PC={};init(o.seed||7);loadGame(o);begin();mpHostOnline()}catch(e){alert('Save inválido')}};
 if(o.bv===BUILD){go();return}
@@ -1030,7 +1030,7 @@ if(placing=='c4'){let b=null,bd=1e9;for(const q of str){if(q.t!='wall'&&q.t!='dw
 if(!b||bd>10){const mt=c4Mil(ax,ay);if(mt)return D({x:mt.x,y:mt.y},P)>300?{x:mt.x,y:mt.y,hz:mt.hz,ok:false,m:'Muito longe.'}:{x:mt.x,y:mt.y,hz:mt.hz,ok:true,m:''};return{x:ax,y:ay,hz:1,ok:false,m:'A C4 só gruda em paredes, cercas e casas.'}};const px=b.hz?Math.max(b.x-26,Math.min(b.x+26,ax)):b.x,py=b.hz?b.y:Math.max(b.y-26,Math.min(b.y+26,ay+30));if(D({x:px,y:py},P)>300)return{x:px,y:py,hz:b.hz,ok:false,m:'Muito longe.'};return{x:px,y:py,hz:b.hz,ok:true,m:''}}
 
 if(t=='wall'||t=='dwall'){const fx=ax/64,fy=ay/64;if(Math.abs(fy-Math.round(fy))<=Math.abs(fx-Math.round(fx))){hz=1;x=Math.floor(fx)*64+32;y=Math.round(fy)*64}else{hz=0;x=Math.round(fx)*64;y=Math.floor(fy)*64+32}}
-else if(t=='found'||t=='roof'||t=='planter'){x=Math.floor(ax/64)*64+32;y=Math.floor(ay/64)*64+32}else{x=sn(ax);y=sn(ay);if(t!='staff'&&t!='tent'&&t!='trap'){const fcx=Math.floor(ax/64),fcy=Math.floor(ay/64);if(str.some(q=>q.t=='found'&&Math.floor(q.x/64)==fcx&&Math.floor(q.y/64)==fcy)){const G=[14,32,50],gi_=v=>Math.max(0,Math.min(2,Math.floor(v/(64/3))));x=fcx*64+G[gi_(ax-fcx*64)];y=fcy*64+G[gi_(ay-fcy*64)];gr=1}}}
+else if(t=='found'||t=='roof'||t=='planter'){x=Math.floor(ax/64)*64+32;y=Math.floor(ay/64)*64+32}else{x=sn(ax);y=sn(ay);if(t!='staff'&&t!='tent'&&t!='trap'){const fcx=Math.floor(ax/64),fcy=Math.floor(ay/64);if(str.some(q=>q.t=='found'&&Math.floor(q.x/64)==fcx&&Math.floor(q.y/64)==fcy)){const G=[18,46],gi_=v=>v<32?0:1;x=fcx*64+G[gi_(ax-fcx*64)];y=fcy*64+G[gi_(ay-fcy*64)];gr=1}}}
 const r=(ok,m)=>({x,y,hz,ok,m,gr});
 if(D({x,y},P)>300)return r(0,'Muito longe.');
 if(t=='staff'&&(CT.some(c=>Math.hypot(c[0]-x,c[1]-y)<1350)||MB.some(m=>Math.hypot(m.x-x,m.y-y)<1200)))return r(0,'Sem território em cidades e bases militares (mín. 100 m de distância).');
@@ -2662,7 +2662,7 @@ else if(Math.hypot(b.x-P.x,b.y-14-P.y)<14){hurt(b.d);b.l=0;if(b.id&&MP)MP.consum
 if(solid(b.x,b.y+20,1)&&!b.f)b.l=0;if(UG&&b.f&&ugWallAt(b.x,b.y+8))b.l=0}}
 for(const q of dfx)q.t+=dt;pfTick(dt);dfx=dfx.filter(q=>q.t<(q.pile?120:5));en=en.filter(e=>e.hp>0);an=an.filter(q=>q.hp>0);bl=bl.filter(b=>b.l>0)}
 function go(){init();started=true;$('s').style.display='none'}
-var FKM=new Map(),FKT=-9,FKN=-1;const FS=.45,FKX=new Set(['wall','dwall','found','roof','planter','staff','tent','trap','fz','c4']);
+var FKM=new Map(),FKT=-9,FKN=-1;const FS=.6,FKX=new Set(['wall','dwall','found','roof','planter','staff','tent','trap','fz','c4']);
 function fkTick(){if(tm-FKT<1&&FKN==str.length)return;FKT=tm;FKN=str.length;FKM=new Map();const F=new Set();for(const q of str)if(q.t=='found')F.add(Math.floor(q.x/64)+','+Math.floor(q.y/64));if(!F.size)return;for(const q of str){if(FKX.has(q.t)||q.t=='found')continue;if(F.has(Math.floor(q.x/64)+','+Math.floor(q.y/64)))FKM.set(q.x*65536+q.y+14,FS)}}
 function dr(img,x,y,sh,fl,k,wv){k=k||1;if(FKM.size){const f=FKM.get(x*65536+y);if(f)k*=f}const sx=x-cam.x+W/2,sy=y-cam.y+H/2;if(sx<-100||sx>W+100||sy<-100||sy>H+160)return;
 {const sr=(sh||img.width*S*.4)*k;X.fillStyle='rgba(10,20,5,.14)';X.beginPath();X.ellipse(sx+sr*.12,sy+1,sr*1.25,sr*.5,0,0,7);X.fill();X.fillStyle='rgba(10,20,5,.2)';X.beginPath();X.ellipse(sx+sr*.1,sy,sr*.95,sr*.37,0,0,7);X.fill()}
